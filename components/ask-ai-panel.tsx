@@ -45,17 +45,26 @@ type AskAiPanelProps = {
   projectCode: string
 }
 
+const MODES = [
+  { id: 'sdk', label: 'Ask AI', api: '/api/ai/project' },
+  { id: 'agent', label: 'Analyze', api: '/api/ai/project-agent' },
+] as const
+
+type ModeId = (typeof MODES)[number]['id']
+
 export function AskAiPanel({ projectId, projectName, projectCode }: AskAiPanelProps) {
   const [input, setInput] = useState('')
+  const [mode, setMode] = useState<ModeId>('sdk')
+  const api = MODES.find((entry) => entry.id === mode)?.api ?? MODES[0].api
   const transport = useMemo(
     () =>
       new DefaultChatTransport({
-        api: '/api/ai/project',
+        api,
         prepareSendMessagesRequest: ({ messages }) => ({
           body: { projectId, question: latestUserQuestion(messages) },
         }),
       }),
-    [projectId]
+    [projectId, api]
   )
   const { messages, sendMessage, status, error, clearError } = useChat({ transport })
   const busy = status === 'submitted' || status === 'streaming'
@@ -84,6 +93,24 @@ export function AskAiPanel({ projectId, projectName, projectCode }: AskAiPanelPr
           <p className="mt-1 text-xs text-muted-foreground">
             {projectName} · {projectCode} · Jawaban hanya berdasarkan data proyek ini.
           </p>
+        </div>
+        <div className="flex items-center gap-1 rounded-lg border border-border p-0.5">
+          {MODES.map((entry) => (
+            <button
+              key={entry.id}
+              type="button"
+              onClick={() => setMode(entry.id)}
+              disabled={busy}
+              aria-pressed={mode === entry.id}
+              className={`rounded-md px-2 py-1 text-xs font-medium transition-colors ${
+                mode === entry.id
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              {entry.label}
+            </button>
+          ))}
         </div>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
