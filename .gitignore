@@ -6,6 +6,6 @@ out
 .env.development
 .env.production
 .env.*.local
+*.tsbuildinfo
 .DS_Store
 .vercel
-.env.local
